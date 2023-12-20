@@ -39,6 +39,7 @@ const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?r
 
 const corsOptions = {
   credentials: true,
+  origin: 'http://localhost:3000',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   optionsSuccessStatus: 204, // Some legacy browsers choke on 204
 };
