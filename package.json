@@ -1,12 +1,11 @@
 {
   "main": "index.js", 
   "scripts": {
-  "start": "node index.js",
-   "install": "npm install --arch=x64 --platform=linux"
-},
-   "engines": {
-    "node": "18.x",
-     "npm": "6.x"
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "16.x",
+    "npm": "6.x"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -22,7 +21,13 @@
     "@aws-sdk/client-s3": "^3.476.0",
     "sharp": "^0.33.1",
     "aws-sdk": "^2.1072.0"
-  }
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ]
 }
 
 
