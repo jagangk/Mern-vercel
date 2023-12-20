@@ -22,7 +22,6 @@ dotenv.config();
 const sharp = require('sharp');
 const aws = require('aws-sdk');
 
-
 // AWS S3 bucket connect
 const s3 = new aws.S3({
     accessKeyId: process.env.S3_ACCESS_KEY,
