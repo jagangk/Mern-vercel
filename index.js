@@ -38,7 +38,7 @@ const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?r
 
 app.use(cors({
   credentials: true,
-  origin: 'http://localhost:3000',
+  origin: 'https://blogstera.tech',
 }));
 app.use(express.json());
 app.use(cookieParser());
