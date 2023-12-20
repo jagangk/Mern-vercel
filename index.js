@@ -26,7 +26,6 @@ const aws = require('aws-sdk');
 // AWS S3 bucket connect
 const s3 = new aws.S3({
     accessKeyId: process.env.S3_ACCESS_KEY,
-    origin: 'http://localhost:3000',
     secretAccessKey: process.env.S3_SECRET_KEY,
     region: 'ap-south-1',
 });
