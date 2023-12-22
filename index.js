@@ -7,7 +7,7 @@ const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10); 
 const jwt = require('jsonwebtoken'); 
-const secret = process.env.JWT_SECRET || 'defaultSecret';
+const secret = 'hello';
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const multer = require('multer');
@@ -22,7 +22,6 @@ dotenv.config();
 const sharp = require('sharp');
 const aws = require('aws-sdk');
 
-
 // AWS S3 bucket connect
 const s3 = new aws.S3({
     accessKeyId: process.env.S3_ACCESS_KEY,
@@ -36,10 +35,7 @@ const s3UploadMiddleware = multer ({
 
 const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority';
 
-app.use(cors({
-  credentials: true,
-  origin: 'https://blogstera.tech',
-}));
+app.use(cors({credentials:true,origin:'https://blogstera.tech'}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -96,24 +92,13 @@ app.post('/login', async(req,res) => {
   
 });
 
-app.get('/profile', async (req, res) => {
-  try {
-    const { token } = req.cookies;
-    console.log('Received token:', token);
-      
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const info = await jwt.verify(token, secret, {});
-
-    res.json(info);
-  } catch (err) {
-    console.error('Error in /profile route:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+app.get('/profile', (req,res) => {
+    const {token} = req.cookies;
+    jwt.verify(token, secret, {}, (err,info) => {
+        if (err) throw err;
+        res.json(info);
+    });
 });
-
 
 app.post('/logout', (req,res) =>{
     res.cookie('token','').json('ok');
@@ -122,8 +107,6 @@ app.post('/logout', (req,res) =>{
 
 // POST route
 app.post('/post', s3UploadMiddleware.single('file'), async (req, res) => {
-  const { token } = req.cookies;
-  console.log('Received token:', token);
   const { originalname, buffer } = req.file;
   const parts = originalname.split('.');
   const ext = parts[parts.length - 1];
@@ -183,9 +166,7 @@ app.get('/post', async (req,res) =>{
 });
 
 //edit post method
-app.put('/post/:id', s3UploadMiddleware.single('file'), async (req, res) => {
-  const { token } = req.cookies;
-  console.log('Received token:', token);
+app.put('/post', s3UploadMiddleware.single('file'), async (req, res) => {
   let newPath = null;
   if (req.file) {
     const { originalname, buffer } = req.file;
@@ -218,6 +199,7 @@ app.put('/post/:id', s3UploadMiddleware.single('file'), async (req, res) => {
     newPath = uploadResult.Location;
   }
 
+  const { token } = req.cookies;
   jwt.verify(token, secret, {}, async (err, info) => {
     if (err) throw err;
     const { id, title, summary, content } = req.body;
@@ -322,4 +304,3 @@ app.listen(4000);
 
 module.exports = app;
 
- 
