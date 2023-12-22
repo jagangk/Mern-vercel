@@ -96,13 +96,23 @@ app.post('/login', async(req,res) => {
   
 });
 
-app.get('/profile', (req,res) => {
-    const {token} = req.cookies;
-    jwt.verify(token, secret, {}, (err,info) => {
-        if (err) throw err;
-        res.json(info);
-    });
+app.get('/profile', async (req, res) => {
+  try {
+    const { token } = req.cookies;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const info = await jwt.verify(token, secret, {});
+
+    res.json(info);
+  } catch (err) {
+    console.error('Error in /profile route:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
+
 
 app.post('/logout', (req,res) =>{
     res.cookie('token','').json('ok');
