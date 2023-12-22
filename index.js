@@ -218,7 +218,6 @@ app.put('/post/:id', s3UploadMiddleware.single('file'), async (req, res) => {
     newPath = uploadResult.Location;
   }
 
-  const { token } = req.cookies;
   jwt.verify(token, secret, {}, async (err, info) => {
     if (err) throw err;
     const { id, title, summary, content } = req.body;
