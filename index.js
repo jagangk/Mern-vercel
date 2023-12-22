@@ -35,7 +35,7 @@ const s3UploadMiddleware = multer ({
 
 const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority';
 
-app.use(cors({credentials:true,origin:'https://blogstera.tech'}));
+app.use(cors({credentials:true,origin:'http://localhost:3000'}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
