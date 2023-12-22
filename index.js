@@ -99,7 +99,8 @@ app.post('/login', async(req,res) => {
 app.get('/profile', async (req, res) => {
   try {
     const { token } = req.cookies;
-
+    console.log('Received token:', token);
+      
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -121,6 +122,8 @@ app.post('/logout', (req,res) =>{
 
 // POST route
 app.post('/post', s3UploadMiddleware.single('file'), async (req, res) => {
+  const { token } = req.cookies;
+  console.log('Received token:', token);
   const { originalname, buffer } = req.file;
   const parts = originalname.split('.');
   const ext = parts[parts.length - 1];
@@ -181,6 +184,8 @@ app.get('/post', async (req,res) =>{
 
 //edit post method
 app.put('/post/:id', s3UploadMiddleware.single('file'), async (req, res) => {
+  const { token } = req.cookies;
+  console.log('Received token:', token);
   let newPath = null;
   if (req.file) {
     const { originalname, buffer } = req.file;
