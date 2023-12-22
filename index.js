@@ -166,7 +166,7 @@ app.get('/post', async (req,res) =>{
 });
 
 //edit post method
-app.put('/post', s3UploadMiddleware.single('file'), async (req, res) => {
+app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
   let newPath = null;
   if (req.file) {
     const { originalname, buffer } = req.file;
