@@ -42,12 +42,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use('/uploads',express.static(__dirname + '/uploads'));
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://blogstera.tech');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
  
 //database connection
 mongoose.set('strictQuery', false);
