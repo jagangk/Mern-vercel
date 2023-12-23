@@ -41,7 +41,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use('/uploads',express.static(__dirname + '/uploads'));
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://blogstera.tech');
+  res.header('Access-Control-Allow-Origin', 'https://6585d27f8c16a8fcd1df48bc--blogsterapage.netlify.app');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
