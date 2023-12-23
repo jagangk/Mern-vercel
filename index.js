@@ -177,49 +177,58 @@ app.get('/post', async (req,res) =>{
     );
 });
 
-//edit post method
 app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
   let newPath = null;
-  if (req.file) {
-    const { originalname, buffer } = req.file;
-    const parts = originalname.split('.');
-    const ext = parts[parts.length - 1];
-    const desiredQuality = 60;
 
-    let processedBuffer;
-    // Determine the format of the image
-    const { format } = await sharp(buffer).metadata();
-  
-    // Apply different options based on the format
-    if (format === 'jpeg') {
-      processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
-    } else if (format === 'png') {
+  try {
+    if (req.file) {
+      const { originalname, buffer } = req.file;
+      const parts = originalname.split('.');
+      const ext = parts[parts.length - 1];
+      const desiredQuality = 60;
+
+      let processedBuffer;
+      // Determine the format of the image
+      const { format } = await sharp(buffer).metadata();
+
+      // Apply different options based on the format
+      if (format === 'jpeg') {
         processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
-    } else {
-      processedBuffer = await sharp(buffer).toBuffer();
+      } else if (format === 'png') {
+        processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
+      } else {
+        processedBuffer = await sharp(buffer).toBuffer();
+      }
+
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `uploads/${Date.now()}.${ext}`,
+        Body: processedBuffer,
+        ContentType: req.file.mimetype,
+        ACL: 'public-read'
+      };
+
+      const uploadResult = await s3.upload(params).promise();
+      newPath = uploadResult.Location;
     }
 
-    const params = {
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: `uploads/${Date.now()}.${ext}`,
-      Body: processedBuffer,
-      ContentType: req.file.mimetype,
-      ACL:'public-read'
-    };
+    const { token } = req.cookies;
+    let info;
 
-    const uploadResult = await s3.upload(params).promise();
-    newPath = uploadResult.Location;
-  }
+    try {
+      info = jwt.verify(token, secret, {});
+    } catch (jwtError) {
+      throw new Error('Invalid token');
+    }
 
-  const { token } = req.cookies;
-  jwt.verify(token, secret, {}, async (err, info) => {
-    if (err) throw err;
     const { id, title, summary, content } = req.body;
     const postDoc = await Post.findById(id);
     const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+
     if (!isAuthor) {
-      return res.status(400).json('you are not the author');
+      return res.status(400).json('You are not the author');
     }
+
     await postDoc.updateOne({
       title,
       summary,
@@ -228,8 +237,12 @@ app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
     });
 
     res.json(postDoc);
-  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json('Internal Server Error');
+  }
 });
+
 
 
 
