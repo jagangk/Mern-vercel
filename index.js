@@ -21,6 +21,14 @@ const dotenv = require('dotenv');
 dotenv.config();
 const sharp = require('sharp');
 const aws = require('aws-sdk');
+const RSS = require('rss');
+const feed = new RSS({
+  title: 'Your Blog Title',
+  description: 'Description of your blog.',
+  feed_url: 'https://blogstera.tech/rss',
+  site_url: 'https://blogstera.tech',
+});
+
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
@@ -175,6 +183,40 @@ app.get('/post', async (req,res) =>{
     .sort({createdAt: -1})
     .limit(20)
     );
+});
+
+// RSS route
+app.get('/rss', async (req, res) => {
+  try {
+      const posts = await Post.find()
+          .populate('author', ['username'])
+          .sort({ createdAt: -1 })
+          .limit(20);
+
+      // Clear existing items in the feed
+      feed.items = [];
+
+      // Add each post to the RSS feed
+      posts.forEach((post) => {
+          const feedItem = {
+              title: post.title,
+              description: post.summary,
+              url: `https://blogstera.tech/post/${post._id}`,
+              author: post.author.username,
+              date: post.createdAt,
+              enclosure: { url: post.cover || '' }, // Optional enclosure for image
+          };
+
+          feed.item(feedItem);
+      });
+
+      // Set the response content type and send the RSS feed
+      res.set('Content-Type', 'application/rss+xml');
+      res.send(feed.xml({ indent: true }));
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
