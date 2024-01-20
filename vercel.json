@@ -8,6 +8,10 @@
   ],
   "routes": [
     {
+      "src": "/post/([a-zA-Z0-9-]+)",
+      "dest": "/post/:1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/"
     }
