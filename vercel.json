@@ -18,7 +18,8 @@
   ],
   "rewrites": [
     {
-      
+      "source": "/post/([a-zA-Z0-9-]+)",
+      "destination": "/post/:1"
     }
   ] 
 }
