@@ -62,7 +62,7 @@ mongoose.set('strictQuery', false);
 mongoose.connect(url,{ useNewUrlParser: true, useUnifiedTopology: true }); 
 
 app.get('/',(req,res) => {
- res.json('server working');
+ res.json('server is fucking working');
 });
 
 //register page connection to database function
