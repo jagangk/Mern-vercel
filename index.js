@@ -14,7 +14,6 @@ const multer = require('multer');
 const uploadMiddleware = multer({ dest: 'uploads/' });
 const fs = require('fs');
 const Post = require('./models/post');
-//const Contact = require('./models/contact');
 const bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
