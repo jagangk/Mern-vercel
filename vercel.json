@@ -9,7 +9,7 @@
   "rewrites": [
     {
       "source": "/post/([a-zA-Z0-9-]+)",
-      "destination": "/post/:1"
+      "destination": "/post?url=:1"
     },
     {
       "source": "/api/(.*)",
