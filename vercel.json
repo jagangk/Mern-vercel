@@ -8,18 +8,18 @@
   ],
   "routes": [
     {
-      "src": "/post/([a-zA-Z0-9-]+)", // This regular expression captures alphanumeric characters and hyphens
-      "dest": "/post/:1" // ":1" refers to the first capture group in the source regular expression
+      "src": "/post/([a-zA-Z0-9-]+)",
+      "dest": "/post/:1"
     },
     {
-      "src": "/(.*)", // This regular expression captures everything
-      "dest": "/index.html" // This destination serves index.html for all routes that match the regex
+      "src": "/(.*)", 
+      "dest": "/index.html" 
     }
   ],
   "rewrites": [
     {
-      "source": "/api/(.*)", // This regular expression captures everything after "/api/"
-      "destination": "/api/index.js" // Redirects requests to /api/* to the index.js file in the /api directory
+      "source": "/api/(.*)", 
+      "destination": "/api/index.js"
     }
   ]
 }
