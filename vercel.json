@@ -12,13 +12,13 @@
       "dest": "/post/:1"
     },
     {
-      "src": "/(.*)", 
-      "dest": "/index.html" 
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "rewrites": [
     {
-      "source": "/api/(.*)", 
+      "source": "/api/(.*)",
       "destination": "/api/index.js"
     }
   ]
