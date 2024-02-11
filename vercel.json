@@ -8,8 +8,8 @@
   ],
   "rewrites": [
     {
-      "source": "/post/([a-zA-Z0-9-]+)",
-      "destination": "/post?url=:1"
+      "source": "/post/:id",
+      "destination": "/post?url=:id"
     },
     {
       "source": "/api/(.*)",
