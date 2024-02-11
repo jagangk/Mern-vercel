@@ -6,20 +6,18 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/post/([a-zA-Z0-9-]+)",
-      "dest": "/post/:1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
   "rewrites": [
+    {
+      "source": "/post/([a-zA-Z0-9-]+)",
+      "destination": "/post/:1"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
