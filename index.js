@@ -54,8 +54,6 @@ app.use(cors({
   optionsSuccessStatus: 204,
 }));
 
-
- 
 //database connection
 mongoose.set('strictQuery', false);
 mongoose.connect(url,{ useNewUrlParser: true, useUnifiedTopology: true }); 
