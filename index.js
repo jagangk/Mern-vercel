@@ -29,7 +29,6 @@ const feed = new RSS({
   site_url: 'https://blogstera.tech',
 });
 
-
 // AWS S3 bucket connect
 const s3 = new aws.S3({
     accessKeyId: process.env.S3_ACCESS_KEY,
