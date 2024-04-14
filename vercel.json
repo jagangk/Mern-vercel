@@ -20,10 +20,15 @@
       "destination": "/index.html"
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/.*",
-      "dest": "index.html"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ]
 }
