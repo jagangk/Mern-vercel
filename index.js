@@ -49,9 +49,7 @@ app.use(bodyParser.json());
 app.use('/uploads',express.static(__dirname + '/uploads'));
 app.use(cors({
   origin: 'https://blogstera.tech',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
-  optionsSuccessStatus: 204,
 }));
 
 //database connection
