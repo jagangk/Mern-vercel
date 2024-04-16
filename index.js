@@ -25,8 +25,8 @@ const RSS = require('rss');
 const feed = new RSS({
   title: 'Your Blog Title',
   description: 'Description of your blog.',
-  feed_url: 'https://blogstera.tech/rss',
-  site_url: 'https://blogstera.tech',
+  feed_url: 'https://blogstera.site/rss',
+  site_url: 'https://blogstera.site',
 });
 
 
@@ -201,7 +201,7 @@ app.get('/rss', async (req, res) => {
           const feedItem = {
               title: post.title,
               description: post.summary,
-              url: `https://blogstera.tech/post/${post._id}`,
+              url: `https://blogstera.site/post/${post._id}`,
               author: post.author.username,
               date: post.createdAt,
               enclosure: { url: post.cover || '' }, // Optional enclosure for image
