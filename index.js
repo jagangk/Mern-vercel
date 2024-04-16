@@ -48,7 +48,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use('/uploads',express.static(__dirname + '/uploads'));
 app.use(cors({
-  origin: 'https://blogstera.tech',
+  origin: 'https://blogstera.site',
   credentials: true,
 }));
 
