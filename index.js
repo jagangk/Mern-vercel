@@ -1,4 +1,3 @@
-//declarations
 const express = require('express');
 const cors = require('cors');
 const { default: mongoose } = require('mongoose');
@@ -9,13 +8,9 @@ const salt = bcrypt.genSaltSync(10);
 const jwt = require('jsonwebtoken'); 
 const secret = 'hello';
 const cookieParser = require('cookie-parser');
-const path = require('path');
-const multer = require('multer');
-const uploadMiddleware = multer({ dest: 'uploads/' });
-const fs = require('fs');
+const multer = require('multer');;
 const Post = require('./models/post');
 const bodyParser = require('body-parser');
-//const Contact = require('./models/contact');
 var nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -25,8 +20,8 @@ const RSS = require('rss');
 const feed = new RSS({
   title: 'Your Blog Title',
   description: 'Description of your blog.',
-  feed_url: 'https://blogstera.tech/rss',
-  site_url: 'https://blogstera.tech',
+  feed_url: 'https://blogstera.site/rss',
+  site_url: 'https://blogstera.site',
 });
 
 // AWS S3 bucket connect
@@ -41,14 +36,13 @@ const s3UploadMiddleware = multer ({
      });
 
 const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority';
-
 app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use('/uploads',express.static(__dirname + '/uploads'));
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://blogstera.site',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204,
@@ -63,7 +57,7 @@ app.get('/',(req,res) => {
 });
 
 //register page connection to database function
-app.post('/register', async (req,res) => {
+app.post('/test', async (req,res) => {
     const {username,password} = req.body;
    
     try{
@@ -189,25 +183,19 @@ app.get('/rss', async (req, res) => {
           .populate('author', ['username'])
           .sort({ createdAt: -1 })
           .limit(20);
-
-      // Clear existing items in the feed
       feed.items = [];
-
-      // Add each post to the RSS feed
       posts.forEach((post) => {
           const feedItem = {
               title: post.title,
               description: post.summary,
-              url: `https://blogstera.tech/post/${post._id}`,
+              url: `https://blogstera.site/post/${post._id}`,
               author: post.author.username,
               date: post.createdAt,
-              enclosure: { url: post.cover || '' }, // Optional enclosure for image
+              enclosure: { url: post.cover || '' },
           };
 
           feed.item(feedItem);
       });
-
-      // Set the response content type and send the RSS feed
       res.set('Content-Type', 'application/rss+xml');
       res.send(feed.xml({ indent: true }));
   } catch (error) {
@@ -227,10 +215,7 @@ app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
       const desiredQuality = 60;
 
       let processedBuffer;
-      // Determine the format of the image
       const { format } = await sharp(buffer).metadata();
-
-      // Apply different options based on the format
       if (format === 'jpeg') {
         processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
       } else if (format === 'png') {
@@ -386,7 +371,7 @@ app.post('/report', async (req, res) => {
       }
   });
 
-    //user acknowledgement mail
+  //user acknowledgement mail
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -395,7 +380,6 @@ app.post('/report', async (req, res) => {
       }
     });
 
-    // Create user mail options
     const mailOptions = {
       from: 'blogsteratech@gmail.com',
       to: email,
