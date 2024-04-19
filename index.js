@@ -14,8 +14,8 @@ const multer = require('multer');
 const uploadMiddleware = multer({ dest: 'uploads/' });
 const fs = require('fs');
 const Post = require('./models/post');
-//const Contact = require('./models/contact');
 const bodyParser = require('body-parser');
+//const Contact = require('./models/contact');
 var nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -25,10 +25,9 @@ const RSS = require('rss');
 const feed = new RSS({
   title: 'Your Blog Title',
   description: 'Description of your blog.',
-  feed_url: 'https://blogstera.site/rss',
-  site_url: 'https://blogstera.site',
+  feed_url: 'https://blogstera.tech/rss',
+  site_url: 'https://blogstera.tech',
 });
-
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
@@ -49,24 +48,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use('/uploads',express.static(__dirname + '/uploads'));
 app.use(cors({
-  origin: 'https://blogstera.site',
+  origin: 'http://localhost:3000',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204,
 }));
 
-
- 
 //database connection
 mongoose.set('strictQuery', false);
 mongoose.connect(url,{ useNewUrlParser: true, useUnifiedTopology: true }); 
 
 app.get('/',(req,res) => {
- res.json('server working');
+ res.json('server is fucking working');
 });
 
 //register page connection to database function
-app.post('/test', async (req,res) => {
+app.post('/register', async (req,res) => {
     const {username,password} = req.body;
    
     try{
@@ -201,7 +198,7 @@ app.get('/rss', async (req, res) => {
           const feedItem = {
               title: post.title,
               description: post.summary,
-              url: `https://blogstera.site/post/${post._id}`,
+              url: `https://blogstera.tech/post/${post._id}`,
               author: post.author.username,
               date: post.createdAt,
               enclosure: { url: post.cover || '' }, // Optional enclosure for image
@@ -285,88 +282,152 @@ app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
   }
 });
 
-
-
-
 app.get('/post/:id', async(req, res) => {
     const {id} = req.params;
     const postDoc = await Post.findById(id).populate('author',['username']);
     res.json(postDoc);
 })
 
-
-
 app.post('/contact', async (req, res) => {
-    try {
-        const { name, email, query } = req.body;
-        //const newContact = new Contact({ name, email, query });
-        //await newContact.save();
+  try {
+      const { name, email, query } = req.body;
+      const adminTransporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+              user: 'blogsteratech@gmail.com',
+              pass: 'jvqo vxmh ojlu uqtk'
+          }
+      });
 
+      const adminMailOptions = {
+          from: 'blogsteratech@gmail.com',
+          to: 'blogsteratech@gmail.com',
+          subject: 'Customer contact',
+          text: `Customer Name: ${name}\nCustomer Email: ${email}\n\n${query}`
+      };
 
-        // Send notification email to the admin
-        const adminTransporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'blogsteratech@gmail.com',
-                pass: 'jvqo vxmh ojlu uqtk'
-            }
-        });
+      adminTransporter.sendMail(adminMailOptions, function (error, info) {
+          if (error) {
+              console.error(error);
+              res.status(500).send('Internal Server Error');
+          } else {
+              console.log('Notification Email sent: ' + info.response);
+              res.status(200).send('Emails sent successfully');
+          }
+      });
 
-        const adminMailOptions = {
-            from: 'blogsteratech@gmail.com',
-            to: 'blogsteratech@gmail.com',
-            subject: 'Customer contact',
-            text: `Customer Name: ${name}\nCustomer Email: ${email}\n\n${query}`
-        };
+      const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+              user: 'blogsteratech@gmail.com',
+              pass: 'jvqo vxmh ojlu uqtk'
+          }
+      });
 
-        adminTransporter.sendMail(adminMailOptions, function (error, info) {
-            if (error) {
-                console.error(error);
-                res.status(500).send('Internal Server Error');
-            } else {
-                console.log('Notification Email sent: ' + info.response);
-                res.status(200).send('Emails sent successfully');
-            }
-        });
+      const mailOptions = {
+          from: 'blogsteratech@gmail.com',
+          to: email,
+          subject: 'Thank you for contacting us',
+          html: `
+              <p>Dear ${name},</p>
+              <p>Thank you for contacting us. We have received your inquiry and will get back to you as soon as possible.</p>
+              <p>Best regards,<br>Blogstera team</p>
+              `
+      };
 
-        //user acknowledgement mail
+      transporter.sendMail(mailOptions, function (error, info) {
+          if (error) {
+              console.error(error);
+              res.status(500).send('Internal Server Error');
+          } else {
+              console.log('Email sent: ' + info.response);
+              res.status(200).send('Ack-Email sent successfully');
+          }
+      });
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'blogsteratech@gmail.com',
-                pass: 'jvqo vxmh ojlu uqtk'
-            }
-        });
-
-        const mailOptions = {
-            from: 'blogsteratech@gmail.com',
-            to: email,
-            subject: 'Thank you for contacting us',
-            html: `
-                <p>Dear ${name},</p>
-                <p>Thank you for contacting us. We have received your inquiry and will get back to you as soon as possible.</p>
-                <p>Best regards,<br>Blogstera team</p>
-                `
-        };
-
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.error(error);
-                res.status(500).send('Internal Server Error');
-            } else {
-                console.log('Email sent: ' + info.response);
-                res.status(200).send('Ack-Email sent successfully');
-            }
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal Server Error');
-    }
+  } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+  }
 
 });
 
-app.listen(4000);
+app.post('/report', async (req, res) => {
+  try {
+    const { name, email, author, postName, query, reportType } = req.body;
+    const adminTransporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'blogsteratech@gmail.com',
+        pass: 'jvqo vxmh ojlu uqtk'
+      }
+    });
 
+
+    const adminMailOptions = {
+      from: 'blogsteratech@gmail.com',
+      to: 'blogsteratech@gmail.com',
+      subject: 'Report contact',
+      text: `Customer Name: ${name}\n
+             Customer Email: ${email}\n
+             Report Type: ${reportType}\n
+             Reported Author Name: ${author}\n
+             Reported post name: ${postName}\n
+             customer mentions:${query}\n`
+    };
+
+    adminTransporter.sendMail(adminMailOptions, function (error, info) {
+      if (error) {
+          console.error(error);
+          res.status(500).send('Internal Server Error');
+      } else {
+          console.log('Notification Email sent: ' + info.response);
+          res.status(200).send('Emails sent successfully');
+      }
+  });
+
+    //user acknowledgement mail
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+          user: 'blogsteratech@gmail.com',
+          pass: 'jvqo vxmh ojlu uqtk'
+      }
+    });
+
+    // Create user mail options
+    const mailOptions = {
+      from: 'blogsteratech@gmail.com',
+      to: email,
+      subject: 'Thank you for reporting the article',
+      html: `
+        <p>Dear ${name},</p>
+        <p>Thank you for contacting us. We have received your report regarding the article on our platform. Your report helps us maintain a safe and respectful community.</p>
+        <div>
+          <h3>Report Details:</h3>
+          <p><strong>Article Author:</strong> ${author}</p>
+          <p><strong>Article Title:</strong> ${postName}</p>
+          <p><strong>Report Type:</strong> ${reportType}</p>
+          <p><strong>Additional Notes:</strong> ${query}</p>
+        </div>
+        <p>We take reports seriously and will review them carefully. If we find that the reported content violates our community guidelines, we will take appropriate action.</p>
+        <p>Best regards,<br>Blogstera team</p>
+      `
+    };
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+          console.error(error);
+          res.status(500).send('Internal Server Error');
+      } else {
+          console.log('Email sent: ' + info.response);
+          res.status(200).send('Ack-Email sent successfully');
+      }
+  });
+
+} catch (err) {
+  console.error(err);
+  res.status(500).send('Internal Server Error');
+}
+});
+app.listen(4000);
 module.exports = app;
