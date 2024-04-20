@@ -204,7 +204,9 @@ app.get('/rss', async (req, res) => {
   }
 });
 
-app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
+app.put('/update', cors({
+  origin: 'https://blogstera.site' // Replace with your actual domain
+}), s3UploadMiddleware.single('file'), async (req, res) => {
   let newPath = null;
 
   try {
@@ -259,6 +261,11 @@ app.put('/update', s3UploadMiddleware.single('file'), async (req, res) => {
       content,
       cover: newPath ? newPath : postDoc.cover,
     });
+
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', 'https://blogstera.site');
+    res.setHeader('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     res.json(postDoc);
   } catch (error) {
