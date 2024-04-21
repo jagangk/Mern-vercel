@@ -57,7 +57,7 @@ app.get('/',(req,res) => {
 });
 
 //register page connection to database function
-app.post('/test', async (req,res) => {
+app.post('/register', async (req,res) => {
     const {username,password} = req.body;
    
     try{
