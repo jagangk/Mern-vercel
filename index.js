@@ -1,139 +1,162 @@
-const express = require('express');
-const cors = require('cors');
-const { default: mongoose } = require('mongoose');
+const express = require("express");
+const cors = require("cors");
+const { default: mongoose } = require("mongoose");
 const app = express();
-const User = require('./models/User');
-const bcrypt = require('bcryptjs');
-const salt = bcrypt.genSaltSync(10); 
-const jwt = require('jsonwebtoken'); 
-const secret = 'hello';
-const cookieParser = require('cookie-parser');
-const multer = require('multer');;
-const Post = require('./models/post');
-const bodyParser = require('body-parser');
-var nodemailer = require('nodemailer');
-const dotenv = require('dotenv');
+const User = require("./models/User");
+const bcrypt = require("bcryptjs");
+const salt = bcrypt.genSaltSync(10);
+const jwt = require("jsonwebtoken");
+const secret = "dbfdfd5454gf54gf4";
+const { MongoClient } = require("mongodb");
+const cookieParser = require("cookie-parser");
+const multer = require("multer");
+const Post = require("./models/post");
+const bodyParser = require("body-parser");
+var nodemailer = require("nodemailer");
+const dotenv = require("dotenv");
 dotenv.config();
-const sharp = require('sharp');
-const aws = require('aws-sdk');
-const RSS = require('rss');
+const sharp = require("sharp");
+const aws = require("aws-sdk");
+const RSS = require("rss");
 const feed = new RSS({
-  title: 'Your Blog Title',
-  description: 'Description of your blog.',
-  feed_url: 'https://blogstera.site/rss',
-  site_url: 'https://blogstera.site',
+  title: "Your Blog Title",
+  description: "Description of your blog.",
+  feed_url: "https://blogstera.site/rss",
+  site_url: "https://blogstera.site",
 });
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
-    accessKeyId: process.env.S3_ACCESS_KEY,
-    secretAccessKey: process.env.S3_SECRET_KEY,
-    region: 'ap-south-1',
+  accessKeyId: process.env.S3_ACCESS_KEY,
+  secretAccessKey: process.env.S3_SECRET_KEY,
+  region: "ap-south-1",
 });
-//upload middleware for amazon s3
-const s3UploadMiddleware = multer ({
-     storage:multer.memoryStorage(),
-     });
 
-const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority';
+const s3UploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+});
+
+const url =
+  "mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority";
 app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use('/uploads',express.static(__dirname + '/uploads'));
-app.use(cors({
-  origin: 'https://blogstera.site',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-  optionsSuccessStatus: 204,
-}));
+app.use("/uploads", express.static(__dirname + "/uploads"));
+app.use(
+  cors({
+    origin: "https://blogstera.site",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
 
 //database connection
-mongoose.set('strictQuery', false);
-mongoose.connect(url,{ useNewUrlParser: true, useUnifiedTopology: true }); 
+mongoose.set("strictQuery", false);
+mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
+const client = new MongoClient(url, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+});
 
-app.get('/',(req,res) => {
- res.json('server is fucking working');
+async function connectToMongoDB() {
+  try {
+    await client.connect();
+    console.log("Connected to MongoDB");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+  }
+}
+
+connectToMongoDB();
+
+app.get("/", (req, res) => {
+  res.json("server is fucking working");
 });
 
 //register page connection to database function
-app.post('/register', async (req,res) => {
-    const {username,password} = req.body;
-   
-    try{
-        if(password.length < 4) {
-            res.status(400);
-            throw new e('Password must be at least 8 characters long');
-            }    
-        const userDoc = await User.create({
-            username,
-            password: bcrypt.hashSync(password,salt), 
-        });
-        res.json(userDoc);
-
-    } catch(e) {
-        console.log(e);
-        res.status(400).json(e);
-
+app.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    if (password.length < 4) {
+      res.status(400);
+      throw new e("Password must be at least 8 characters long");
     }
+    const userDoc = await User.create({
+      username,
+      password: bcrypt.hashSync(password, salt),
+    });
+    res.json(userDoc);
+  } catch (e) {
+    console.log(e);
+    res.status(400).json(e);
+  }
 });
 
 //login page end point connection to database function
-app.post('/login', async(req,res) => {
-    const {username,password} = req.body;
-    const userDoc = await User.findOne({username});
-    const passOk = bcrypt.compareSync(password, userDoc.password);
-    if (passOk) {
-        jwt.sign({username,id:userDoc._id}, secret, {}, (err,token) =>{
-            if (err) throw err;
-            res.cookie('token',token)
-            .json({
-                id:userDoc._id,
-                username,
-                token : token
-            });
-        });
-    } else{
-        res.status(400).json('wrong credentials');
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const userDoc = await User.findOne({ username });
+  const passOk = bcrypt.compareSync(password, userDoc.password);
+  if (passOk) {
+    jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+      if (err) throw err;
+      res.cookie("token", token).json({
+        id: userDoc._id,
+        username,
+        token: token,
+      });
+    });
+  } else {
+    res.status(400).json("wrong credentials");
+  }
+});
+
+//token verification
+app.get("/profile", async (req, res) => {
+  try {
+    const { token } = req.cookies;
+
+    if (!token) {
+      return res.status(401).json({ message: "Token is missing" });
     }
-  
+    const decoded = await jwt.verify(token, secret);
+    res.json(decoded);
+  } catch (error) {
+    console.error("Error verifying token:", error);
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-app.get('/profile', (req,res) => {
-
-    const {token} = req.cookies;
-
-    
-    jwt.verify(token, secret, {}, (err,info) => {
-          if (err) throw err;
-          res.json(info);
-     });
-});
-
-app.post('/logout', (req,res) =>{
-    res.cookie('token','').json('ok');
-
+app.post("/logout", (req, res) => {
+  res.cookie("token", "").json("ok");
 });
 
 // POST route
-app.post('/post', s3UploadMiddleware.single('file'), async (req, res) => {
+app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
   const { originalname, buffer } = req.file;
-  const parts = originalname.split('.');
+  const parts = originalname.split(".");
   const ext = parts[parts.length - 1];
   const desiredQuality = 60;
-  
-  let processedBuffer;
-  // Determine the format of the image
-  const { format } = await sharp(buffer).metadata();
 
-  // Apply different options based on the format
-  if (format === 'jpeg') {
-    processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
-  } else if (format === 'png') {
-    processedBuffer = await sharp(buffer).png({ compressionLevel: 5 }).toBuffer();
-    // You can adjust the compression level (0 to 9) for PNG images
+  let processedBuffer;
+  const { format } = await sharp(buffer).metadata();
+  if (format === "jpeg") {
+    processedBuffer = await sharp(buffer)
+      .jpeg({ quality: desiredQuality })
+      .toBuffer();
+  } else if (format === "png") {
+    processedBuffer = await sharp(buffer)
+      .png({ compressionLevel: 5 })
+      .toBuffer();
   } else {
-    // Handle other formats or use a default behavior
     processedBuffer = await sharp(buffer).toBuffer();
   }
 
@@ -142,14 +165,16 @@ app.post('/post', s3UploadMiddleware.single('file'), async (req, res) => {
     Key: `uploads/${Date.now()}.${ext}`,
     Body: processedBuffer,
     ContentType: req.file.mimetype,
-    ACL:'public-read'
+    ACL: "public-read",
   };
 
   s3.upload(params, async (err, data) => {
     if (err) {
-        console.error(err); 
-        res.status(500).json({ error: 'Failed to upload to S3', details: err.message });
-      } else {
+      console.error(err);
+      res
+        .status(500)
+        .json({ error: "Failed to upload to S3", details: err.message });
+    } else {
       const { token } = req.cookies;
       console.log(token);
       jwt.verify(token, secret, {}, async (err, info) => {
@@ -168,60 +193,66 @@ app.post('/post', s3UploadMiddleware.single('file'), async (req, res) => {
   });
 });
 
-app.get('/post', async (req,res) =>{
-    res.json(await Post.find()
-     .populate('author',['username'])
-    .sort({createdAt: -1})
-    .limit(20)
-    );
+app.get("/post", async (req, res) => {
+  res.json(
+    await Post.find()
+      .populate("author", ["username"])
+      .sort({ createdAt: -1 })
+      .limit(20)
+  );
 });
 
 // RSS route
-app.get('/rss', async (req, res) => {
+app.get("/rss", async (req, res) => {
   try {
-      const posts = await Post.find()
-          .populate('author', ['username'])
-          .sort({ createdAt: -1 })
-          .limit(20);
-      feed.items = [];
-      posts.forEach((post) => {
-          const feedItem = {
-              title: post.title,
-              description: post.summary,
-              url: `https://blogstera.site/post/${post._id}`,
-              author: post.author.username,
-              date: post.createdAt,
-              enclosure: { url: post.cover || '' },
-          };
+    const posts = await Post.find()
+      .populate("author", ["username"])
+      .sort({ createdAt: -1 })
+      .limit(20);
+    feed.items = [];
+    posts.forEach((post) => {
+      const feedItem = {
+        title: post.title,
+        description: post.summary,
+        url: `https://blogstera.site/post/${post._id}`,
+        author: post.author.username,
+        date: post.createdAt,
+        enclosure: { url: post.cover || "" },
+      };
 
-          feed.item(feedItem);
-      });
-      res.set('Content-Type', 'application/rss+xml');
-      res.send(feed.xml({ indent: true }));
+      feed.item(feedItem);
+    });
+    res.set("Content-Type", "application/rss+xml");
+    res.send(feed.xml({ indent: true }));
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.put('/update', cors({
-  origin: 'https://blogstera.site' // Replace with your actual domain
-}), s3UploadMiddleware.single('file'), async (req, res) => {
+// post update route
+app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
   let newPath = null;
-
   try {
     if (req.file) {
       const { originalname, buffer } = req.file;
-      const parts = originalname.split('.');
+      const parts = originalname.split(".");
       const ext = parts[parts.length - 1];
       const desiredQuality = 60;
 
       let processedBuffer;
+      // Determine the format of the image
       const { format } = await sharp(buffer).metadata();
-      if (format === 'jpeg') {
-        processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
-      } else if (format === 'png') {
-        processedBuffer = await sharp(buffer).jpeg({ quality: desiredQuality }).toBuffer();
+
+      // Apply different options based on the format
+      if (format === "jpeg") {
+        processedBuffer = await sharp(buffer)
+          .jpeg({ quality: desiredQuality })
+          .toBuffer();
+      } else if (format === "png") {
+        processedBuffer = await sharp(buffer)
+          .jpeg({ quality: desiredQuality })
+          .toBuffer();
       } else {
         processedBuffer = await sharp(buffer).toBuffer();
       }
@@ -231,7 +262,7 @@ app.put('/update', cors({
         Key: `uploads/${Date.now()}.${ext}`,
         Body: processedBuffer,
         ContentType: req.file.mimetype,
-        ACL: 'public-read'
+        ACL: "public-read",
       };
 
       const uploadResult = await s3.upload(params).promise();
@@ -244,7 +275,7 @@ app.put('/update', cors({
     try {
       info = jwt.verify(token, secret, {});
     } catch (jwtError) {
-      throw new Error('Invalid token');
+      throw new Error("Invalid token");
     }
 
     const { id, title, summary, content } = req.body;
@@ -252,7 +283,7 @@ app.put('/update', cors({
     const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
 
     if (!isAuthor) {
-      return res.status(400).json('You are not the author');
+      return res.status(400).json("You are not the author");
     }
 
     await postDoc.updateOne({
@@ -262,135 +293,126 @@ app.put('/update', cors({
       cover: newPath ? newPath : postDoc.cover,
     });
 
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', 'https://blogstera.site');
-    res.setHeader('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
     res.json(postDoc);
   } catch (error) {
     console.error(error);
-    res.status(500).json('Internal Server Error');
+    res.status(500).json("Internal Server Error");
   }
 });
 
-app.get('/post/:id', async(req, res) => {
-    const {id} = req.params;
-    const postDoc = await Post.findById(id).populate('author',['username']);
-    res.json(postDoc);
-})
-
-app.post('/contact', async (req, res) => {
-  try {
-      const { name, email, query } = req.body;
-      const adminTransporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-              user: 'blogsteratech@gmail.com',
-              pass: 'jvqo vxmh ojlu uqtk'
-          }
-      });
-
-      const adminMailOptions = {
-          from: 'blogsteratech@gmail.com',
-          to: 'blogsteratech@gmail.com',
-          subject: 'Customer contact',
-          text: `Customer Name: ${name}\nCustomer Email: ${email}\n\n${query}`
-      };
-
-      adminTransporter.sendMail(adminMailOptions, function (error, info) {
-          if (error) {
-              console.error(error);
-              res.status(500).send('Internal Server Error');
-          } else {
-              console.log('Notification Email sent: ' + info.response);
-              res.status(200).send('Emails sent successfully');
-          }
-      });
-
-      const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-              user: 'blogsteratech@gmail.com',
-              pass: 'jvqo vxmh ojlu uqtk'
-          }
-      });
-
-      const mailOptions = {
-          from: 'blogsteratech@gmail.com',
-          to: email,
-          subject: 'Thank you for contacting us',
-          html: `
-              <p>Dear ${name},</p>
-              <p>Thank you for contacting us. We have received your inquiry and will get back to you as soon as possible.</p>
-              <p>Best regards,<br>Blogstera team</p>
-              `
-      };
-
-      transporter.sendMail(mailOptions, function (error, info) {
-          if (error) {
-              console.error(error);
-              res.status(500).send('Internal Server Error');
-          } else {
-              console.log('Email sent: ' + info.response);
-              res.status(200).send('Ack-Email sent successfully');
-          }
-      });
-
-  } catch (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
-  }
-
+app.get("/post/:id", async (req, res) => {
+  const { id } = req.params;
+  const postDoc = await Post.findById(id).populate("author", ["username"]);
+  res.json(postDoc);
 });
 
-app.post('/report', async (req, res) => {
+app.post("/contact", async (req, res) => {
   try {
-    const { name, email, author, postName, query, reportType } = req.body;
+    const { name, email, query } = req.body;
     const adminTransporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
-        user: 'blogsteratech@gmail.com',
-        pass: 'jvqo vxmh ojlu uqtk'
+        user: "blogsteratech@gmail.com",
+        pass: "jvqo vxmh ojlu uqtk",
+      },
+    });
+
+    const adminMailOptions = {
+      from: "blogsteratech@gmail.com",
+      to: "blogsteratech@gmail.com",
+      subject: "Customer contact",
+      text: `Customer Name: ${name}\nCustomer Email: ${email}\n\n${query}`,
+    };
+
+    adminTransporter.sendMail(adminMailOptions, function (error, info) {
+      if (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+      } else {
+        console.log("Notification Email sent: " + info.response);
+        res.status(200).send("Emails sent successfully");
       }
     });
 
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "blogsteratech@gmail.com",
+        pass: "jvqo vxmh ojlu uqtk",
+      },
+    });
+
+    const mailOptions = {
+      from: "blogsteratech@gmail.com",
+      to: email,
+      subject: "Thank you for contacting us",
+      html: `
+              <p>Dear ${name},</p>
+              <p>Thank you for contacting us. We have received your inquiry and will get back to you as soon as possible.</p>
+              <p>Best regards,<br>Blogstera team</p>
+              `,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+      } else {
+        console.log("Email sent: " + info.response);
+        res.status(200).send("Ack-Email sent successfully");
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.post("/report", async (req, res) => {
+  try {
+    const { name, email, author, postName, query, reportType } = req.body;
+    const adminTransporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "blogsteratech@gmail.com",
+        pass: "jvqo vxmh ojlu uqtk",
+      },
+    });
 
     const adminMailOptions = {
-      from: 'blogsteratech@gmail.com',
-      to: 'blogsteratech@gmail.com',
-      subject: 'Report contact',
+      from: "blogsteratech@gmail.com",
+      to: "blogsteratech@gmail.com",
+      subject: "Report contact",
       text: `Customer Name: ${name}\n
              Customer Email: ${email}\n
              Report Type: ${reportType}\n
              Reported Author Name: ${author}\n
              Reported post name: ${postName}\n
-             customer mentions:${query}\n`
+             customer mentions:${query}\n`,
     };
 
     adminTransporter.sendMail(adminMailOptions, function (error, info) {
       if (error) {
-          console.error(error);
-          res.status(500).send('Internal Server Error');
+        console.error(error);
+        res.status(500).send("Internal Server Error");
       } else {
-          console.log('Notification Email sent: ' + info.response);
-          res.status(200).send('Emails sent successfully');
-      }
-  });
-
-  //user acknowledgement mail
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-          user: 'blogsteratech@gmail.com',
-          pass: 'jvqo vxmh ojlu uqtk'
+        console.log("Notification Email sent: " + info.response);
+        res.status(200).send("Emails sent successfully");
       }
     });
 
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "blogsteratech@gmail.com",
+        pass: "jvqo vxmh ojlu uqtk",
+      },
+    });
+
     const mailOptions = {
-      from: 'blogsteratech@gmail.com',
+      from: "blogsteratech@gmail.com",
       to: email,
-      subject: 'Thank you for reporting the article',
+      subject: "Thank you for reporting the article",
       html: `
         <p>Dear ${name},</p>
         <p>Thank you for contacting us. We have received your report regarding the article on our platform. Your report helps us maintain a safe and respectful community.</p>
@@ -403,22 +425,21 @@ app.post('/report', async (req, res) => {
         </div>
         <p>We take reports seriously and will review them carefully. If we find that the reported content violates our community guidelines, we will take appropriate action.</p>
         <p>Best regards,<br>Blogstera team</p>
-      `
+      `,
     };
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
-          console.error(error);
-          res.status(500).send('Internal Server Error');
+        console.error(error);
+        res.status(500).send("Internal Server Error");
       } else {
-          console.log('Email sent: ' + info.response);
-          res.status(200).send('Ack-Email sent successfully');
+        console.log("Email sent: " + info.response);
+        res.status(200).send("Ack-Email sent successfully");
       }
-  });
-
-} catch (err) {
-  console.error(err);
-  res.status(500).send('Internal Server Error');
-}
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
 });
 app.listen(4000);
 module.exports = app;
