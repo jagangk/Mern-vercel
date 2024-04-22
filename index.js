@@ -193,6 +193,43 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
   });
 });
 
+// delete route
+app.delete("/post/:id", async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    // Check if the post exists
+    const post = await Post.findById(postId);
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    // Delete the post from MongoDB
+    await post.deleteOne();  // Use deleteOne() method to delete the document
+
+    // Delete the post image from S3
+    const keyParts = post.cover.split('/');
+    const key = keyParts[keyParts.length - 2] + '/' + keyParts[keyParts.length - 1];
+    
+    const s3Params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+    };
+
+    s3.deleteObject(s3Params, (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to delete post image from S3", details: err.message });
+      }
+      res.json({ message: "Post deleted successfully", deletedPost: post });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete post", details: error.message });
+  }
+});
+
 app.get("/post", async (req, res) => {
   res.json(
     await Post.find()
