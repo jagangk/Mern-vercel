@@ -45,7 +45,7 @@ app.use(bodyParser.json());
 app.use("/uploads", express.static(__dirname + "/uploads"));
 // Enable CORS
 app.use(cors({
-    origin: ['https://blogstera.site', 'https://api.blogstera.site'],
+    origin: ['https://blogstera.site', 'https://www.api.blogstera.site'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204,
