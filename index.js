@@ -43,14 +43,14 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use("/uploads", express.static(__dirname + "/uploads"));
-app.use(
-  cors({
-    origin: "https://blogstera.site",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+// Enable CORS
+app.use(cors({
+    origin: ['https://blogstera.site', 'https://api.blogstera.site'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204,
-  })
-);
+}));
+
 
 //database connection
 mongoose.set("strictQuery", false);
