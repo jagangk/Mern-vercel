@@ -36,8 +36,8 @@ const s3UploadMiddleware = multer({
   storage: multer.memoryStorage(),
 });
 
-const url =
-  "mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority";
+const url = "mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority";
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -45,12 +45,11 @@ app.use(bodyParser.json());
 app.use("/uploads", express.static(__dirname + "/uploads"));
 // Enable CORS
 app.use(cors({
-    origin: ['https://blogstera.site', 'https://www.api.blogstera.site'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204,
+  origin: ['https://blogstera.site', 'https://www.api.blogstera.site'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204,
 }));
-
 
 //database connection
 mongoose.set("strictQuery", false);
@@ -74,7 +73,7 @@ async function connectToMongoDB() {
 connectToMongoDB();
 
 app.get("/", (req, res) => {
-  res.json("server is fucking working");
+  res.json("server is working");
 });
 
 //register page connection to database function
@@ -139,7 +138,7 @@ app.post("/logout", (req, res) => {
   res.cookie("token", "").json("ok");
 });
 
-// POST route
+//Create POST route
 app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
   const { originalname, buffer } = req.file;
   const parts = originalname.split(".");
@@ -179,11 +178,12 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
       console.log(token);
       jwt.verify(token, secret, {}, async (err, info) => {
         if (err) throw err;
-        const { title, summary, content } = req.body;
+        const { title, summary, content, PostType } = req.body;
         const postDoc = await Post.create({
           title,
           summary,
           content,
+          PostType,
           cover: data.Location,
           author: info.id,
         });
@@ -191,43 +191,6 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
       });
     }
   });
-});
-
-// delete route
-app.delete("/post/:id", async (req, res) => {
-  const postId = req.params.id;
-
-  try {
-    // Check if the post exists
-    const post = await Post.findById(postId);
-    
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
-    }
-
-    // Delete the post from MongoDB
-    await post.deleteOne();  // Use deleteOne() method to delete the document
-
-    // Delete the post image from S3
-    const keyParts = post.cover.split('/');
-    const key = keyParts[keyParts.length - 2] + '/' + keyParts[keyParts.length - 1];
-    
-    const s3Params = {
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
-    };
-
-    s3.deleteObject(s3Params, (err, data) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Failed to delete post image from S3", details: err.message });
-      }
-      res.json({ message: "Post deleted successfully", deletedPost: post });
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to delete post", details: error.message });
-  }
 });
 
 app.get("/post", async (req, res) => {
@@ -238,6 +201,7 @@ app.get("/post", async (req, res) => {
       .limit(20)
   );
 });
+
 
 // RSS route
 app.get("/rss", async (req, res) => {
@@ -266,6 +230,40 @@ app.get("/rss", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
+// delete route
+app.delete("/post/:id", async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    await post.deleteOne();
+    const keyParts = post.cover.split('/');
+    const key = keyParts[keyParts.length - 2] + '/' + keyParts[keyParts.length - 1];
+    
+    const s3Params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+    };
+
+    s3.deleteObject(s3Params, (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to delete post image from S3", details: err.message });
+      }
+      res.json({ message: "Post deleted successfully", deletedPost: post });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete post", details: error.message });
+  }
+});
+
 
 // post update route
 app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
@@ -315,7 +313,7 @@ app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
       throw new Error("Invalid token");
     }
 
-    const { id, title, summary, content } = req.body;
+    const { id, title, summary, content, PostType } = req.body;
     const postDoc = await Post.findById(id);
     const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
 
@@ -326,6 +324,7 @@ app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
     await postDoc.updateOne({
       title,
       summary,
+      PostType,
       content,
       cover: newPath ? newPath : postDoc.cover,
     });
