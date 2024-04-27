@@ -21,7 +21,7 @@ const RSS = require("rss");
 const feed = new RSS({
   title: "Your Blog Title",
   description: "Description of your blog.",
-  feed_url: "https://blogstera.site/rss",
+  feed_url: "https://www.api.blogstera.site/rss",
   site_url: "https://blogstera.site",
 });
 
