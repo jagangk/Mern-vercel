@@ -36,7 +36,7 @@ const s3UploadMiddleware = multer({
   storage: multer.memoryStorage(),
 });
 
-const url = process.env.DB_URL;
+const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority';
 
 app.use(express.json());
 app.use(cookieParser());
