@@ -221,7 +221,7 @@ app.get("/rss", async (req, res) => {
         date: post.createdAt,
         enclosure: { url: post.cover || "" },
         custom_elements: [
-          { 'category': post.category }
+          { 'category': post.PostType }
         ]
       };
 
