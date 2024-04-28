@@ -19,8 +19,8 @@ const sharp = require("sharp");
 const aws = require("aws-sdk");
 const RSS = require("rss");
 const feed = new RSS({
-  title: "Your Blog Title",
-  description: "Description of your blog.",
+  title: "Blogstera",
+  description: "Breaking news, views, reviews, sports, tech, science from across the world",
   feed_url: "https://www.api.blogstera.site/rss",
   site_url: "https://blogstera.site",
 });
@@ -36,7 +36,7 @@ const s3UploadMiddleware = multer({
   storage: multer.memoryStorage(),
 });
 
-const url = "mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority";
+const url = process.env.DB_URL;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -203,13 +203,14 @@ app.get("/post", async (req, res) => {
 });
 
 
-// RSS route
+//RSS route
 app.get("/rss", async (req, res) => {
   try {
     const posts = await Post.find()
       .populate("author", ["username"])
       .sort({ createdAt: -1 })
       .limit(20);
+
     feed.items = [];
     posts.forEach((post) => {
       const feedItem = {
@@ -219,10 +220,14 @@ app.get("/rss", async (req, res) => {
         author: post.author.username,
         date: post.createdAt,
         enclosure: { url: post.cover || "" },
+        custom_elements: [
+          { 'category': post.category }
+        ]
       };
 
       feed.item(feedItem);
     });
+
     res.set("Content-Type", "application/rss+xml");
     res.send(feed.xml({ indent: true }));
   } catch (error) {
@@ -342,20 +347,21 @@ app.get("/post/:id", async (req, res) => {
   res.json(postDoc);
 });
 
+//customer contact function
 app.post("/contact", async (req, res) => {
   try {
     const { name, email, query } = req.body;
     const adminTransporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "blogsteratech@gmail.com",
-        pass: "jvqo vxmh ojlu uqtk",
+        user: process.env.USER,
+        pass: process.env.PASS,
       },
     });
 
     const adminMailOptions = {
-      from: "blogsteratech@gmail.com",
-      to: "blogsteratech@gmail.com",
+      from: process.env.USER,
+      to: process.env.USER,
       subject: "Customer contact",
       text: `Customer Name: ${name}\nCustomer Email: ${email}\n\n${query}`,
     };
@@ -373,13 +379,13 @@ app.post("/contact", async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "blogsteratech@gmail.com",
-        pass: "jvqo vxmh ojlu uqtk",
+        user: process.env.USER,
+        pass: process.env.PASS,
       },
     });
 
     const mailOptions = {
-      from: "blogsteratech@gmail.com",
+      from: process.env.USER,
       to: email,
       subject: "Thank you for contacting us",
       html: `
@@ -404,20 +410,21 @@ app.post("/contact", async (req, res) => {
   }
 });
 
+// user report aunthentication function
 app.post("/report", async (req, res) => {
   try {
     const { name, email, author, postName, query, reportType } = req.body;
     const adminTransporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "blogsteratech@gmail.com",
-        pass: "jvqo vxmh ojlu uqtk",
+        user: process.env.USER,
+        pass: process.env.PASS,
       },
     });
 
     const adminMailOptions = {
-      from: "blogsteratech@gmail.com",
-      to: "blogsteratech@gmail.com",
+      from: process.env.USER,
+      to: process.env.USER,
       subject: "Report contact",
       text: `Customer Name: ${name}\n
              Customer Email: ${email}\n
@@ -440,13 +447,13 @@ app.post("/report", async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "blogsteratech@gmail.com",
-        pass: "jvqo vxmh ojlu uqtk",
+        user: process.env.USER,
+        pass: process.env.PASS,
       },
     });
 
     const mailOptions = {
-      from: "blogsteratech@gmail.com",
+      from: process.env.USER,
       to: email,
       subject: "Thank you for reporting the article",
       html: `
