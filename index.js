@@ -18,12 +18,6 @@ dotenv.config();
 const sharp = require("sharp");
 const aws = require("aws-sdk");
 const RSS = require("rss");
-const feed = new RSS({
-  title: "Blogstera",
-  description: "Breaking news, views, reviews, sports, tech, science from across the world",
-  feed_url: "https://www.api.blogstera.site/rss",
-  site_url: "https://blogstera.site",
-});
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
@@ -202,40 +196,45 @@ app.get("/post", async (req, res) => {
   );
 });
 
-
 //RSS route
 app.get("/rss", async (req, res) => {
   try {
-    const posts = await Post.find()
-      .populate("author", ["username"])
-      .sort({ createdAt: -1 })
-      .limit(20);
+    const posts = await Post.find().sort({ createdAt: -1 }).limit(20);
+    const feed = new RSS({
+      title: 'Blogstera',
+      description: 'News,sports,science,Tech,views and opinions etc',
+      feed_url: 'https://www.api.blogstera.site/rss',
+      site_url: 'https://blogstera.site',
+      language: 'en',
+    });
 
-    feed.items = [];
-    posts.forEach((post) => {
-      const feedItem = {
+    posts.forEach(post => {
+      feed.item({
         title: post.title,
         description: post.summary,
         url: `https://blogstera.site/post/${post._id}`,
-        author: post.author.username,
+        guid:`https://blogstera.site/post/${post._id}`,
         date: post.createdAt,
-        enclosure: { url: post.cover || "" },
+        enclosure: { url: post.cover},
         custom_elements: [
-          { 'category': post.PostType }
+          { 'category': post.PostType}
         ]
-      };
-
-      feed.item(feedItem);
+      });
     });
 
-    res.set("Content-Type", "application/rss+xml");
-    res.send(feed.xml({ indent: true }));
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    const xml = feed.xml({ indent: true });
+    res.set('Content-Type', 'application/rss+xml');
+    res.send(xml);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
   }
 });
 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 // delete route
 app.delete("/post/:id", async (req, res) => {
