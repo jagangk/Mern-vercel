@@ -199,7 +199,7 @@ app.get("/post", async (req, res) => {
 //RSS route
 app.get("/rss", async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 }).limit(20);
+    const posts = await Post.find().sort({ createdAt: -1 }).limit(8);
     const feed = new RSS({
       title: 'Blogstera',
       description: 'News,sports,science,Tech,views and opinions etc',
