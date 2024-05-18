@@ -73,22 +73,32 @@ app.get("/", (req, res) => {
 
 //register page connection to database function
 app.post("/register", async (req, res) => {
-  const { username, password, email , interestType } = req.body;
+  const { username, password, email, interestType } = req.body;
   try {
     if (password.length < 4) {
-      res.status(400);
-      throw new e("Password must be at least 4 characters long");
+      return res.status(400).json({ error: "401" });
     }
+
+    const existingUser = await User.findOne({ username });
+    const existingmail = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "402" });
+    }
+    else if(existingmail) {
+      return res.status(400).json({ error: "403"})
+    }
+    
     const userDoc = await User.create({
       username,
       password: bcrypt.hashSync(password, salt),
       email,
       interestType,
     });
+
     res.json(userDoc);
   } catch (e) {
-    console.log(e);
-    res.status(400).json(e);
+    console.error(e);
+    res.status(400).json({ error: e.message });
   }
 });
 
@@ -123,15 +133,15 @@ app.post('/ResetPassword', async (req , res) => {
 
 //login page end point connection to database function
 app.post("/login", async (req, res) => {
-  const { username , password } = req.body;
+  const { username, password } = req.body;
 
   try {
     // Check if the identifier is an email
     const isEmail = username.includes('@');
-    const userDoc = await User.findOne(isEmail ? { email: username } : { username: username });
+    const userDoc = await User.findOne(isEmail ? { email: username } : { username });
 
     if (!userDoc) {
-      return res.status(400).json("User not found");
+      return res.status(400).json({ error: "401" });
     }
 
     const passOk = bcrypt.compareSync(password, userDoc.password);
@@ -146,11 +156,11 @@ app.post("/login", async (req, res) => {
         });
       });
     } else {
-      res.status(400).json("Wrong credentials");
+      res.status(400).json({ error: "402" });
     }
   } catch (error) {
     console.error('Error logging in:', error);
-    res.status(500).json("Internal server error");
+    res.status(500).json({ error: "403" });
   }
 });
 
