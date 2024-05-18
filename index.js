@@ -123,20 +123,34 @@ app.post('/ResetPassword', async (req , res) => {
 
 //login page end point connection to database function
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  const userDoc = await User.findOne({ username });
-  const passOk = bcrypt.compareSync(password, userDoc.password);
-  if (passOk) {
-    jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
-      if (err) throw err;
-      res.cookie("token", token).json({
-        id: userDoc._id,
-        username,
-        token: token,
+  const { username , password } = req.body;
+
+  try {
+    // Check if the identifier is an email
+    const isEmail = username.includes('@');
+    const userDoc = await User.findOne(isEmail ? { email: username } : { username: username });
+
+    if (!userDoc) {
+      return res.status(400).json("User not found");
+    }
+
+    const passOk = bcrypt.compareSync(password, userDoc.password);
+
+    if (passOk) {
+      jwt.sign({ username: userDoc.username, id: userDoc._id }, secret, {}, (err, token) => {
+        if (err) throw err;
+        res.cookie("token", token).json({
+          id: userDoc._id,
+          username: userDoc.username,
+          token: token,
+        });
       });
-    });
-  } else {
-    res.status(400).json("wrong credentials");
+    } else {
+      res.status(400).json("Wrong credentials");
+    }
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json("Internal server error");
   }
 });
 
