@@ -18,6 +18,7 @@ dotenv.config();
 const sharp = require("sharp");
 const aws = require("aws-sdk");
 const RSS = require("rss");
+const UserModel = require("./models/User");
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
@@ -40,7 +41,7 @@ app.use("/uploads", express.static(__dirname + "/uploads"));
 // Enable CORS
 app.use(cors({
   origin: ['https://blogstera.site', 'https://www.api.blogstera.site'],
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   credentials: true,
   optionsSuccessStatus: 204,
 }));
@@ -72,20 +73,51 @@ app.get("/", (req, res) => {
 
 //register page connection to database function
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email , interestType } = req.body;
   try {
     if (password.length < 4) {
       res.status(400);
-      throw new e("Password must be at least 8 characters long");
+      throw new e("Password must be at least 4 characters long");
     }
     const userDoc = await User.create({
       username,
       password: bcrypt.hashSync(password, salt),
+      email,
+      interestType,
     });
     res.json(userDoc);
   } catch (e) {
     console.log(e);
     res.status(400).json(e);
+  }
+});
+
+//update password route
+app.post('/ResetPassword', async (req , res) => {
+  const { identifier, newPassword } = req.body;
+
+  if ( !identifier || !newPassword ) {
+    return res.status(400).json ({ error: 'Email or New password is not been sent'});
+  }
+
+  try {
+    const user = await UserModel.findOne ({
+      $or : [{ email: identifier}, { username: identifier}],
+    });
+
+    if (!user) {
+      console.log('User not found for identifier:', identifier);
+      return res.status(404).json ({ error: 'User not found'});
+    }
+
+    const hashedPassword = await bcrypt.hash (newPassword, 10)
+    user.password = hashedPassword;
+    await user.save({ validateModifiedOnly: true });
+
+    res.status(200).json ({ message: 'Password successfully updated'});
+  } catch (error) {
+    console.error('Error updating password:', error);
+    res.status(500).json ({error: 'server error'});
   }
 });
 
