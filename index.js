@@ -244,12 +244,19 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
 });
 
 app.get("/post", async (req, res) => {
-  res.json(
-    await Post.find()
-      .populate("author", ["username"])
-      .sort({ createdAt: -1 })
-      .limit(50)
-  );
+  const page = req.query.page || 1;
+  const limit = req.query.limit || 10;
+  try {
+      const posts = await Post.find()
+          .populate("author", ["username"])
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+      res.json(posts);
+  } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ error: "Error fetching posts" });
+  }
 });
 
 //RSS route
