@@ -16,7 +16,7 @@ router.get('/', async function (req, res) {
 		const data = await Post.find();
 		const posts = data.map(({ _id }) => `/post/${_id}`);
 		const smStream = new SitemapStream({ 
-			hostname: 'https://blogstera.site' 
+			hostname: 'https://blogstera.site/' 
 		});
 		const pipeline = smStream.pipe(zlib.createGzip());
 

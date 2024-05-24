@@ -42,6 +42,7 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use("/uploads", express.static(__dirname + "/uploads"));
+
 // Enable CORS
 app.use(cors({
   origin: ['https://blogstera.site', 'https://www.api.blogstera.site'],
