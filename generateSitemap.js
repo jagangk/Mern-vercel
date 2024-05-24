@@ -8,63 +8,75 @@ const router = express.Router();
 let sitemap;
 
 router.get('/', async function (req, res) {
-	res.header('Content-Type', 'application/xml');
-	res.header('Content-Encoding', 'gzip');
-	if (sitemap) return res.send(sitemap);
+    res.header('Content-Type', 'application/xml');
+    res.header('Content-Encoding', 'gzip');
+    if (sitemap) return res.send(sitemap);
 
-	try {
-		const data = await Post.find();
-		const posts = data.map(({ _id }) => `/post/${_id}`);
-		const smStream = new SitemapStream({ 
-			hostname: 'https://blogstera.site/' 
-		});
-		const pipeline = smStream.pipe(zlib.createGzip());
+    try {
+        const data = await Post.find();
+        const posts = data.map(({ _id }) => `/post/${_id}`);
+        
+        // Base URL of your frontend
+        const frontendUrl = 'https://blogstera.site';
+        
+        // Base URL of your backend
+        const backendUrl = 'https://api.blogstera.site';
+        
+        // Create a new SitemapStream with the backend URL
+        const smStream = new SitemapStream({ 
+            hostname: backendUrl 
+        });
+        const pipeline = smStream.pipe(zlib.createGzip());
 
-		posts.forEach(item => 
-			smStream.write({
-				url: item, 
-				lastmod: date,
-				changefreq: 'daily', 
-				priority: 0.7
-			})
-		);
+        // Write post URLs to the stream using frontend URL
+        posts.forEach(item => 
+            smStream.write({
+                url: `${frontendUrl}${item}`, 
+                lastmod: date,
+                changefreq: 'daily', 
+                priority: 0.7
+            })
+        );
 
-		smStream.write({
-			url: '/login', 
-			lastmod: date,
-			changefreq: 'monthly', 
-			priority: 0.9
-		});
+        // Manually add all the other important URLs
+        smStream.write({
+            url: `${frontendUrl}/login`, 
+            lastmod: date,
+            changefreq: 'monthly', 
+            priority: 0.9
+        });
 
-    smStream.write({
-			url: '/register', 
-			lastmod: date,
-			changefreq: 'monthly', 
-			priority: 0.9
-		});
+        smStream.write({
+            url: `${frontendUrl}/register`, 
+            lastmod: date,
+            changefreq: 'monthly', 
+            priority: 0.9
+        });
 
-    smStream.write({
-			url: '/create', 
-			lastmod: date,
-			changefreq: 'monthly', 
-			priority: 0.9
-		});
+        smStream.write({
+            url: `${frontendUrl}/create`, 
+            lastmod: date,
+            changefreq: 'monthly', 
+            priority: 0.9
+        });
 
-		smStream.write({
-			url: '/contact', 
-			lastmod: date,
-			changefreq: 'monthly', 
-			priority: 0.9
-		});
+        smStream.write({
+            url: `${frontendUrl}/contact`, 
+            lastmod: date,
+            changefreq: 'monthly', 
+            priority: 0.9
+        });
 
-		streamToPromise(pipeline).then(sm => sitemap = sm);
-		smStream.end();
+        // Cache the response
+        streamToPromise(pipeline).then(sm => sitemap = sm);
+        smStream.end();
 
-		pipeline.pipe(res).on('error', e => { throw e; });
-	} catch (err) {
-		console.error(err);
-		res.status(500).end();
-	}
+        // Stream write the response
+        pipeline.pipe(res).on('error', e => { throw e; });
+    } catch (err) {
+        console.error(err);
+        res.status(500).end();
+    }
 });
 
 module.exports = router;
