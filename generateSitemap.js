@@ -10,7 +10,7 @@ async function generateSitemap() {
     const posts = await Post.find().select('_id');
 
     // Create a stream to write to
-    const sitemapStream = new SitemapStream({ hostname: 'https://www.api.blogstera.site' });
+    const sitemapStream = new SitemapStream({ hostname: 'https://blogstera.site' });
     const pipeline = sitemapStream.pipe(createGzip());
 
     // Write each post to the sitemap
