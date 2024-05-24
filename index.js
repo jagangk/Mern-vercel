@@ -19,9 +19,10 @@ const sharp = require("sharp");
 const aws = require("aws-sdk");
 const RSS = require("rss");
 const UserModel = require("./models/User");
-const generateSitemap = require('./generateSitemap');
-const path = require('path');
-const fs = require('fs');
+const sitemapRouter = require('./generateSitemap');
+
+//sitemap route
+app.use('/sitemap.xml', sitemapRouter);
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
@@ -240,23 +241,12 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
           cover: data.Location,
           author: info.id,
         });
-        await generateSitemap();
         res.json(postDoc);
       });
     }
   });
 });
 
-//sitemap route
-if (!fs.existsSync(path.resolve(__dirname, 'public'))) {
-  fs.mkdirSync(path.resolve(__dirname, 'public'));
-}
-
-app.get('/sitemap.xml', (req, res) => {
-  const sitemapPath = path.resolve(__dirname, 'public', 'sitemap.xml.gz');
-  res.header('Content-Encoding', 'gzip');
-  res.sendFile(sitemapPath);
-});
 
 //fetch post route for indexpage
 app.get("/post", async (req, res) => {
@@ -310,10 +300,6 @@ app.get("/rss", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
 
 // delete route
 app.delete("/post/:id", async (req, res) => {
@@ -562,5 +548,9 @@ app.post("/report", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-app.listen(4000);
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 module.exports = app;

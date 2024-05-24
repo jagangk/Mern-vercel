@@ -1,41 +1,70 @@
+const express = require("express");
 const { SitemapStream, streamToPromise } = require('sitemap');
-const { createGzip } = require('zlib');
-const fs = require('fs');
-const path = require('path');
-const Post = require('./models/post'); // Adjust the path to your Post model
+const Post = require("./models/post"); 
+const date = new Date().toISOString();
+const zlib = require("zlib");
+const router = express.Router();
 
-async function generateSitemap() {
-  try {
-    // Fetch posts from the database
-    const posts = await Post.find().select('_id');
+let sitemap;
 
-    // Create a stream to write to
-    const sitemapStream = new SitemapStream({ hostname: 'https://blogstera.site' });
-    const pipeline = sitemapStream.pipe(createGzip());
+router.get('/', async function (req, res) {
+	res.header('Content-Type', 'application/xml');
+	res.header('Content-Encoding', 'gzip');
+	if (sitemap) return res.send(sitemap);
 
-    // Write each post to the sitemap
-    posts.forEach(post => {
-      sitemapStream.write({ url: `/post/${post._id}`, changefreq: 'daily', priority: 0.7 });
-    });
+	try {
+		const data = await Post.find();
+		const posts = data.map(({ _id }) => `/post/${_id}`);
+		const smStream = new SitemapStream({ 
+			hostname: 'https://blogstera.site' 
+		});
+		const pipeline = smStream.pipe(zlib.createGzip());
 
-    // End the stream
-    sitemapStream.end();
+		posts.forEach(item => 
+			smStream.write({
+				url: item, 
+				lastmod: date,
+				changefreq: 'daily', 
+				priority: 0.7
+			})
+		);
 
-    // Ensure the 'public' directory exists
-    const sitemapPath = path.resolve(__dirname, 'public', 'sitemap.xml.gz');
-    const publicDir = path.dirname(sitemapPath);
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir);
-    }
+		smStream.write({
+			url: '/login', 
+			lastmod: date,
+			changefreq: 'monthly', 
+			priority: 0.9
+		});
 
-    // Write the sitemap to the file system
-    const sitemap = await streamToPromise(pipeline);
-    fs.writeFileSync(sitemapPath, sitemap);
+    smStream.write({
+			url: '/register', 
+			lastmod: date,
+			changefreq: 'monthly', 
+			priority: 0.9
+		});
 
-    console.log('Sitemap generated successfully.');
-  } catch (error) {
-    console.error('Error generating sitemap:', error);
-  }
-}
+    smStream.write({
+			url: '/create', 
+			lastmod: date,
+			changefreq: 'monthly', 
+			priority: 0.9
+		});
 
-module.exports = generateSitemap;
+		smStream.write({
+			url: '/contact', 
+			lastmod: date,
+			changefreq: 'monthly', 
+			priority: 0.9
+		});
+
+		streamToPromise(pipeline).then(sm => sitemap = sm);
+		smStream.end();
+
+		pipeline.pipe(res).on('error', e => { throw e; });
+	} catch (err) {
+		console.error(err);
+		res.status(500).end();
+	}
+});
+
+module.exports = router;
