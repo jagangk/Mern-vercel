@@ -152,6 +152,35 @@ app.post('/ResetPassword', async (req , res) => {
   }
 });
 
+//udate profile route 
+app.post('/UpdateProfile', async (req, res) => {
+  const { email, interestType, identifier } = req.body;
+
+  if (!email || !interestType || !identifier) {
+    return res.status(400).json({ error: 'Email, interest type, or identifier is not provided' });
+  }
+
+  try {
+    const user = await UserModel.findOne ({
+      $or : [{ email: identifier}, { username: identifier}],
+    });
+
+    if (!user) {
+      console.log('User not found for identifier:', identifier);
+      return res.status(404).json ({ error: 'User not found'});
+    }
+
+    user.email = email;
+    user.interestType = interestType;
+    await user.save({ validateModifiedOnly: true });
+
+    res.status(200).json({ message: 'Profile updated successfully!' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 //login page end point connection to database function
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
@@ -349,7 +378,6 @@ app.delete("/post/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete post", details: error.message });
   }
 });
-
 
 // post update route
 app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
