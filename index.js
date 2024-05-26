@@ -20,6 +20,7 @@ const aws = require("aws-sdk");
 const RSS = require("rss");
 const UserModel = require("./models/User");
 const sitemapRouter = require('./generateSitemap');
+const router = express.Router();
 
 //sitemap route
 app.use('/sitemap.xml', sitemapRouter);
@@ -45,7 +46,7 @@ app.use("/uploads", express.static(__dirname + "/uploads"));
 
 // Enable CORS
 app.use(cors({
-  origin: ['https://blogstera.site', 'https://www.api.blogstera.site'],
+  origin: ['https://blogstera.site', 'https://www.api.blogstera.site','http://localhost:3000'],
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   credentials: true,
   optionsSuccessStatus: 204,
@@ -75,6 +76,21 @@ connectToMongoDB();
 app.get("/", (req, res) => {
   res.json("server is working");
 });
+
+//to fetch user data
+app.get('/users/:username', async (req, res) => {
+    const username = req.params.username;
+    const user = await User.findOne({ username });
+    res.json(user);
+});
+
+// to fetch user post details
+app.get('/posts/user/:userId', async (req, res) => {
+    const userId = req.params.userId;
+    const posts = await Post.find({ author: userId });
+    return res.json(posts);
+});
+
 
 //register page connection to database function
 app.post("/register", async (req, res) => {
