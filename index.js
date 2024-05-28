@@ -15,6 +15,7 @@ const bodyParser = require("body-parser");
 var nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 dotenv.config();
+require('dotenv').config();
 const sharp = require("sharp");
 const aws = require("aws-sdk");
 const RSS = require("rss");
