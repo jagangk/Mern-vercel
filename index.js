@@ -22,9 +22,8 @@ const RSS = require("rss");
 const UserModel = require("./models/User");
 const sitemapRouter = require('./generateSitemap');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
-
+const API_KEY = process.env.API_KEY;
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 //sitemap route
 app.use('/sitemap.xml', sitemapRouter);
