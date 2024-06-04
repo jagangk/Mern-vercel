@@ -21,7 +21,10 @@ const aws = require("aws-sdk");
 const RSS = require("rss");
 const UserModel = require("./models/User");
 const sitemapRouter = require('./generateSitemap');
-const router = express.Router();
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+
 
 //sitemap route
 app.use('/sitemap.xml', sitemapRouter);
@@ -90,6 +93,25 @@ app.get('/posts/user/:userId', async (req, res) => {
     const userId = req.params.userId;
     const posts = await Post.find({ author: userId });
     return res.json(posts);
+});
+
+//generative plag Ai
+app.post('/api/plagiarism-check', async (req, res) => {
+  const { text } = req.body;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = `Rewrite the following text in a different style to avoid plagiarism, give only one option and show only the rewritted text dont include any acknowledgements, use different choice of words and also check plagiarism once: ${text}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const rewrittenText = response.text();
+
+    res.json({ rewrittenText });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'An error occurred while rewriting text.' });
+  }
 });
 
 
