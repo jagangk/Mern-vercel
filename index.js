@@ -113,6 +113,25 @@ app.post('/api/plagiarism-check', async (req, res) => {
   }
 });
 
+//generative content check Ai
+app.post('/api/content-check', async (req, res) => {
+  const { text, platform } = req.body;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = `check wheather the content title is supported by the platform or not. start the message with yes or no, if the content title was supported by the respective platform reply yes and suggest some improvements if needed, if it was against the guidelines of the respective platform say no and suggest some alternate content titles, dont say that the content was not engaging or not just check the title with the community guidelines mentioned in the respective platform, for clickbait titles give warning 
+    give the resposne message in paragrapgh only. content title:${text} content platform: ${platform}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const rewrittenText = response.text();
+
+    res.json({ rewrittenText });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: '400' });
+  }
+});
 
 //register page connection to database function
 app.post("/register", async (req, res) => {
