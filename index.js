@@ -193,34 +193,68 @@ app.post('/ResetPassword', async (req , res) => {
   }
 });
 
-//udate profile route 
-app.post('/UpdateProfile', async (req, res) => {
-  const { email, interestType, identifier } = req.body;
-
-  if (!email || !interestType || !identifier) {
-    return res.status(400).json({ error: 'Email, interest type, or identifier is not provided' });
-  }
-
+//update user profile
+app.put("/updateUser", s3UploadMiddleware.single("file"), async (req, res) => {
+  let newPath = null;
   try {
-    const user = await UserModel.findOne ({
-      $or : [{ email: identifier}, { username: identifier}],
+    if (req.file) {
+      const { originalname, buffer } = req.file;
+      const parts = originalname.split(".");
+      const ext = parts[parts.length - 1];
+      const desiredQuality = 60;
+
+      let processedBuffer;
+      // Determine the format of the image
+      const { format } = await sharp(buffer).metadata();
+
+      // Apply different options based on the format
+      if (format === "jpeg" || format === "png") {
+        processedBuffer = await sharp(buffer)
+          .jpeg({ quality: desiredQuality })
+          .toBuffer();
+      } else {
+        processedBuffer = await sharp(buffer).toBuffer();
+      }
+
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `user_cover/${Date.now()}.${ext}`,
+        Body: processedBuffer,
+        ContentType: req.file.mimetype,
+        ACL: "public-read",
+      };
+
+      const uploadResult = await s3.upload(params).promise();
+      newPath = uploadResult.Location;
+    }
+
+    const { username, email } = req.body;
+
+    // Find the user by either username or email
+    const user = await UserModel.findOne({
+      $or: [{ email: username }, { username: username }],
     });
 
     if (!user) {
-      console.log('User not found for identifier:', identifier);
-      return res.status(404).json ({ error: 'User not found'});
+      console.log('User not found for identifier:', username);
+      return res.status(404).json({ error: 'User not found' });
     }
 
+    // Update user's email and icon, and save
     user.email = email;
-    user.interestType = interestType;
+    if (newPath) {
+      user.icon = newPath;
+    }
+
     await user.save({ validateModifiedOnly: true });
 
-    res.status(200).json({ message: 'Profile updated successfully!' });
+    res.status(200).json({ message: 'Profile updated successfully!', newPath });
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 //login page end point connection to database function
 app.post("/login", async (req, res) => {
