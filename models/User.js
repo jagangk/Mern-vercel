@@ -6,7 +6,7 @@ const UserSchema = new Schema({
     password: {type: String, required: true, minlength:4},
     email: {type: String, required: true, unique: true},
     interestType: {type: String, required: true},
-    icon: {type: String, required: true},
+    icon: {type: String},
 });
 
 const UserModel = model('User',UserSchema);
