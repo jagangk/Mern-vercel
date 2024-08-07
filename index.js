@@ -94,6 +94,27 @@ app.get('/posts/user/:userId', async (req, res) => {
     return res.json(posts);
 });
 
+// Fetch posts by category
+app.get('/posts/category/:category', async (req, res) => {
+  const { category } = req.params;
+  try {
+    const posts = await Post.find({ PostType: category }).sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching posts", error });
+  }
+});
+
+// Fetch latest posts for Trending
+app.get('/posts/latest', async (req, res) => {
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 }).limit(20); // Adjust the limit as needed
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching posts", error });
+  }
+});
+
 //generative plag Ai
 app.post('/api/plagiarism-check', async (req, res) => {
   const { text } = req.body;
