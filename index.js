@@ -15,18 +15,19 @@ const bodyParser = require("body-parser");
 var nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 dotenv.config();
-require('dotenv').config();
+require("dotenv").config();
 const sharp = require("sharp");
 const aws = require("aws-sdk");
 const RSS = require("rss");
 const UserModel = require("./models/User");
-const sitemapRouter = require('./generateSitemap');
+const sitemapRouter = require("./generateSitemap");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const API_KEY = process.env.API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
+const keywordExtractor = require("keyword-extractor");
 
 //sitemap route
-app.use('/sitemap.xml', sitemapRouter);
+app.use("/sitemap.xml", sitemapRouter);
 
 // AWS S3 bucket connect
 const s3 = new aws.S3({
@@ -39,7 +40,8 @@ const s3UploadMiddleware = multer({
   storage: multer.memoryStorage(),
 });
 
-const url = 'mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority';
+const url =
+  "mongodb+srv://blog:vhUWIEuOKLl1tVOE@cluster0.hrwjeaz.mongodb.net/?retryWrites=true&w=majority";
 
 app.use(express.json());
 app.use(cookieParser());
@@ -48,12 +50,18 @@ app.use(bodyParser.json());
 app.use("/uploads", express.static(__dirname + "/uploads"));
 
 // Enable CORS
-app.use(cors({
-  origin: ['https://blogstera.site', 'https://www.api.blogstera.site','http://localhost:3000'],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  credentials: true,
-  optionsSuccessStatus: 204,
-}));
+app.use(
+  cors({
+    origin: [
+      "https://blogstera.site",
+      "https://www.api.blogstera.site",
+      "http://localhost:3000",
+    ],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
 
 //database connection
 mongoose.set("strictQuery", false);
@@ -81,24 +89,26 @@ app.get("/", (req, res) => {
 });
 
 //to fetch user data
-app.get('/users/:username', async (req, res) => {
-    const username = req.params.username;
-    const user = await User.findOne({ username });
-    res.json(user);
+app.get("/users/:username", async (req, res) => {
+  const username = req.params.username;
+  const user = await User.findOne({ username });
+  res.json(user);
 });
 
 // to fetch user post details
-app.get('/posts/user/:userId', async (req, res) => {
-    const userId = req.params.userId;
-    const posts = await Post.find({ author: userId });
-    return res.json(posts);
+app.get("/posts/user/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  const posts = await Post.find({ author: userId });
+  return res.json(posts);
 });
 
 // Fetch posts by category
-app.get('/posts/category/:category', async (req, res) => {
+app.get("/posts/category/:category", async (req, res) => {
   const { category } = req.params;
   try {
-    const posts = await Post.find({ PostType: category }).sort({ createdAt: -1 });
+    const posts = await Post.find({ PostType: category }).sort({
+      createdAt: -1,
+    });
     res.json(posts);
   } catch (error) {
     res.status(500).json({ message: "Error fetching posts", error });
@@ -106,7 +116,7 @@ app.get('/posts/category/:category', async (req, res) => {
 });
 
 // Fetch latest posts for Trending
-app.get('/posts/latest', async (req, res) => {
+app.get("/posts/latest", async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 }).limit(20); // Adjust the limit as needed
     res.json(posts);
@@ -116,7 +126,7 @@ app.get('/posts/latest', async (req, res) => {
 });
 
 //generative plag Ai
-app.post('/api/plagiarism-check', async (req, res) => {
+app.post("/api/plagiarism-check", async (req, res) => {
   const { text } = req.body;
 
   try {
@@ -130,12 +140,12 @@ app.post('/api/plagiarism-check', async (req, res) => {
     res.json({ rewrittenText });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: 'An error occurred while rewriting text.' });
+    res.status(500).json({ error: "An error occurred while rewriting text." });
   }
 });
 
 //generative content check Ai
-app.post('/api/content-check', async (req, res) => {
+app.post("/api/content-check", async (req, res) => {
   const { text, platform } = req.body;
 
   try {
@@ -150,7 +160,7 @@ app.post('/api/content-check', async (req, res) => {
     res.json({ rewrittenText });
   } catch (err) {
     console.error(err.message);
-    res.status(500).json({ error: '400' });
+    res.status(500).json({ error: "400" });
   }
 });
 
@@ -166,11 +176,10 @@ app.post("/register", async (req, res) => {
     const existingmail = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "402" });
+    } else if (existingmail) {
+      return res.status(400).json({ error: "403" });
     }
-    else if(existingmail) {
-      return res.status(400).json({ error: "403"})
-    }
-    
+
     const userDoc = await User.create({
       username,
       password: bcrypt.hashSync(password, salt),
@@ -186,31 +195,33 @@ app.post("/register", async (req, res) => {
 });
 
 //update password route
-app.post('/ResetPassword', async (req , res) => {
+app.post("/ResetPassword", async (req, res) => {
   const { identifier, newPassword } = req.body;
 
-  if ( !identifier || !newPassword ) {
-    return res.status(400).json ({ error: 'Email or New password is not been sent'});
+  if (!identifier || !newPassword) {
+    return res
+      .status(400)
+      .json({ error: "Email or New password is not been sent" });
   }
 
   try {
-    const user = await UserModel.findOne ({
-      $or : [{ email: identifier}, { username: identifier}],
+    const user = await UserModel.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
     });
 
     if (!user) {
-      console.log('User not found for identifier:', identifier);
-      return res.status(404).json ({ error: 'User not found'});
+      console.log("User not found for identifier:", identifier);
+      return res.status(404).json({ error: "User not found" });
     }
 
-    const hashedPassword = await bcrypt.hash (newPassword, 10)
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save({ validateModifiedOnly: true });
 
-    res.status(200).json ({ message: 'Password successfully updated'});
+    res.status(200).json({ message: "Password successfully updated" });
   } catch (error) {
-    console.error('Error updating password:', error);
-    res.status(500).json ({error: 'server error'});
+    console.error("Error updating password:", error);
+    res.status(500).json({ error: "server error" });
   }
 });
 
@@ -257,8 +268,8 @@ app.put("/updateUser", s3UploadMiddleware.single("file"), async (req, res) => {
     });
 
     if (!user) {
-      console.log('User not found for identifier:', username);
-      return res.status(404).json({ error: 'User not found' });
+      console.log("User not found for identifier:", username);
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Update user's email and icon, and save
@@ -269,13 +280,12 @@ app.put("/updateUser", s3UploadMiddleware.single("file"), async (req, res) => {
 
     await user.save({ validateModifiedOnly: true });
 
-    res.status(200).json({ message: 'Profile updated successfully!', newPath });
+    res.status(200).json({ message: "Profile updated successfully!", newPath });
   } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
-
 
 //login page end point connection to database function
 app.post("/login", async (req, res) => {
@@ -283,8 +293,10 @@ app.post("/login", async (req, res) => {
 
   try {
     // Check if the identifier is an email
-    const isEmail = username.includes('@');
-    const userDoc = await User.findOne(isEmail ? { email: username } : { username });
+    const isEmail = username.includes("@");
+    const userDoc = await User.findOne(
+      isEmail ? { email: username } : { username }
+    );
 
     if (!userDoc) {
       return res.status(400).json({ error: "401" });
@@ -293,19 +305,24 @@ app.post("/login", async (req, res) => {
     const passOk = bcrypt.compareSync(password, userDoc.password);
 
     if (passOk) {
-      jwt.sign({ username: userDoc.username, id: userDoc._id }, secret, {}, (err, token) => {
-        if (err) throw err;
-        res.cookie("token", token).json({
-          id: userDoc._id,
-          username: userDoc.username,
-          token: token,
-        });
-      });
+      jwt.sign(
+        { username: userDoc.username, id: userDoc._id },
+        secret,
+        {},
+        (err, token) => {
+          if (err) throw err;
+          res.cookie("token", token).json({
+            id: userDoc._id,
+            username: userDoc.username,
+            token: token,
+          });
+        }
+      );
     } else {
       res.status(400).json({ error: "402" });
     }
   } catch (error) {
-    console.error('Error logging in:', error);
+    console.error("Error logging in:", error);
     res.status(500).json({ error: "403" });
   }
 });
@@ -375,11 +392,25 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
       jwt.verify(token, secret, {}, async (err, info) => {
         if (err) throw err;
         const { title, summary, content, PostType } = req.body;
+
+        function extractKeywords(content) {
+          const extractionResult = keywordExtractor.extract(content, {
+            language: "english",
+            remove_digits: true,
+            return_changed_case: true,
+            remove_duplicates: true,
+          });
+
+          return extractionResult;
+        }
+
+        const keywords = extractKeywords(content);
         const postDoc = await Post.create({
           title,
           summary,
           content,
           PostType,
+          keywords,
           cover: data.Location,
           author: info.id,
         });
@@ -389,21 +420,20 @@ app.post("/post", s3UploadMiddleware.single("file"), async (req, res) => {
   });
 });
 
-
 //fetch post route for indexpage
 app.get("/post", async (req, res) => {
   const page = req.query.page || 1;
   const limit = req.query.limit || 10;
   try {
-      const posts = await Post.find()
-          .populate("author", ["username"])
-          .sort({ createdAt: -1 })
-          .skip((page - 1) * limit)
-          .limit(limit);
-      res.json(posts);
+    const posts = await Post.find()
+      .populate("author", ["username"])
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+    res.json(posts);
   } catch (error) {
-      console.error("Error fetching posts:", error);
-      res.status(500).json({ error: "Error fetching posts" });
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ error: "Error fetching posts" });
   }
 });
 
@@ -412,36 +442,33 @@ app.get("/rss", async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 }).limit(50);
     const feed = new RSS({
-      title: 'Blogstera',
-      description: 'News,sports,science,Tech,views and opinions etc',
-      feed_url: 'https://www.api.blogstera.site/rss',
-      site_url: 'https://blogstera.site',
-      language: 'en',
+      title: "Blogstera",
+      description: "News,sports,science,Tech,views and opinions etc",
+      feed_url: "https://www.api.blogstera.site/rss",
+      site_url: "https://blogstera.site",
+      language: "en",
     });
 
-    posts.forEach(post => {
+    posts.forEach((post) => {
       feed.item({
         title: post.title,
         description: post.summary,
         url: `https://blogstera.site/post/${post._id}`,
-        guid:`https://blogstera.site/post/${post._id}`,
+        guid: `https://blogstera.site/post/${post._id}`,
         date: post.createdAt,
-        enclosure: { url: post.cover},
-        custom_elements: [
-          { 'category': post.PostType}
-        ]
+        enclosure: { url: post.cover },
+        custom_elements: [{ category: post.PostType }],
       });
     });
 
     const xml = feed.xml({ indent: true });
-    res.set('Content-Type', 'application/rss+xml');
+    res.set("Content-Type", "application/rss+xml");
     res.send(xml);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send("Internal Server Error");
   }
 });
-
 
 // delete route
 app.delete("/post/:id", async (req, res) => {
@@ -454,9 +481,10 @@ app.delete("/post/:id", async (req, res) => {
     }
 
     await post.deleteOne();
-    const keyParts = post.cover.split('/');
-    const key = keyParts[keyParts.length - 2] + '/' + keyParts[keyParts.length - 1];
-    
+    const keyParts = post.cover.split("/");
+    const key =
+      keyParts[keyParts.length - 2] + "/" + keyParts[keyParts.length - 1];
+
     const s3Params = {
       Bucket: process.env.S3_BUCKET_NAME,
       Key: key,
@@ -465,13 +493,20 @@ app.delete("/post/:id", async (req, res) => {
     s3.deleteObject(s3Params, (err, data) => {
       if (err) {
         console.error(err);
-        return res.status(500).json({ error: "Failed to delete post image from S3", details: err.message });
+        return res
+          .status(500)
+          .json({
+            error: "Failed to delete post image from S3",
+            details: err.message,
+          });
       }
       res.json({ message: "Post deleted successfully", deletedPost: post });
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to delete post", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to delete post", details: error.message });
   }
 });
 
@@ -531,11 +566,25 @@ app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
       return res.status(400).json("You are not the author");
     }
 
+    function extractKeywords(content) {
+      const extractionResult = keywordExtractor.extract(content, {
+        language: "english",
+        remove_digits: true,
+        return_changed_case: true,
+        remove_duplicates: true,
+      });
+
+      return extractionResult;
+    }
+
+    const keywords = extractKeywords(content);
+
     await postDoc.updateOne({
       title,
       summary,
       PostType,
       content,
+      keywords,
       cover: newPath ? newPath : postDoc.cover,
     });
 
