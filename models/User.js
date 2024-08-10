@@ -6,6 +6,7 @@ const UserSchema = new Schema({
     password: { type: String, required: true, minlength: 4 },
     email: { type: String, required: true, unique: true },
     interestType: { type: String, required: true },
+    verified: {type: Boolean, default: false},
     icon: { type: String },
 }, { timestamps: true,
 

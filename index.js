@@ -493,12 +493,10 @@ app.delete("/post/:id", async (req, res) => {
     s3.deleteObject(s3Params, (err, data) => {
       if (err) {
         console.error(err);
-        return res
-          .status(500)
-          .json({
-            error: "Failed to delete post image from S3",
-            details: err.message,
-          });
+        return res.status(500).json({
+          error: "Failed to delete post image from S3",
+          details: err.message,
+        });
       }
       res.json({ message: "Post deleted successfully", deletedPost: post });
     });
@@ -595,9 +593,12 @@ app.put("/update", s3UploadMiddleware.single("file"), async (req, res) => {
   }
 });
 
+//fetch method for postpage
 app.get("/post/:id", async (req, res) => {
   const { id } = req.params;
   const postDoc = await Post.findById(id).populate("author", ["username"]);
+  postDoc.views = (postDoc.views || 0) + 1;
+  await postDoc.save();
   res.json(postDoc);
 });
 
