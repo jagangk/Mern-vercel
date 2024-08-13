@@ -470,6 +470,73 @@ app.get("/rss", async (req, res) => {
   }
 });
 
+// RSS route for News posts
+app.get("/rss/news", async (req, res) => {
+  try {
+    const posts = await Post.find({ PostType: "News" }).sort({ createdAt: -1 }).limit(50);
+    const feed = new RSS({
+      title: "Blogstera - News",
+      description: "Latest news articles from Blogstera",
+      feed_url: "https://www.api.blogstera.site/rss/news",
+      site_url: "https://blogstera.site",
+      language: "en",
+    });
+
+    posts.forEach((post) => {
+      feed.item({
+        title: post.title,
+        description: post.summary,
+        url: `https://blogstera.site/post/${post._id}`,
+        guid: `https://blogstera.site/post/${post._id}`,
+        date: post.createdAt,
+        enclosure: { url: post.cover },
+        custom_elements: [{ category: post.PostType }],
+      });
+    });
+
+    const xml = feed.xml({ indent: true });
+    res.set("Content-Type", "application/rss+xml");
+    res.send(xml);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// RSS route for Gaming posts
+app.get("/rss/gaming", async (req, res) => {
+  try {
+    const posts = await Post.find({ PostType: "Gaming" }).sort({ createdAt: -1 }).limit(50);
+    const feed = new RSS({
+      title: "Blogstera - Gaming",
+      description: "Latest gaming articles from Blogstera",
+      feed_url: "https://www.api.blogstera.site/rss/gaming",
+      site_url: "https://blogstera.site",
+      language: "en",
+    });
+
+    posts.forEach((post) => {
+      feed.item({
+        title: post.title,
+        description: post.summary,
+        url: `https://blogstera.site/post/${post._id}`,
+        guid: `https://blogstera.site/post/${post._id}`,
+        date: post.createdAt,
+        enclosure: { url: post.cover },
+        custom_elements: [{ category: post.PostType }],
+      });
+    });
+
+    const xml = feed.xml({ indent: true });
+    res.set("Content-Type", "application/rss+xml");
+    res.send(xml);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+
 // delete route
 app.delete("/post/:id", async (req, res) => {
   const postId = req.params.id;
